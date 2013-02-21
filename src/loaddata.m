@@ -1,9 +1,42 @@
-function data = loaddata(dataname)
+function data = loaddata(dataname, seed)
 % Convenience function for loading datasets by name.
-s = RandStream('mt19937ar', 'Seed', 1);
+if nargin == 1
+    seed = 1;
+end
+s = RandStream('mt19937ar', 'Seed', seed);
 RandStream.setGlobalStream(s);
 
 switch dataname
+    case 'jan8_processed'
+        background = importdata('../atlas/data/jan8_2013/bg.txt');
+        signal = importdata('../atlas/data/jan8_2013/signal.txt');
+        data.input  = [background; signal];
+        data.target = [zeros(size(background, 1), 1); ones(size(signal, 1), 1)];
+        data = randomOrder(data);
+        % Process
+        for j = 1:size(data.input, 2)
+            vec = data.input(:, j);
+            if min(vec) < 0
+                % Data is presumed to be Gaussian or uniform -- center and standardize
+                vec = vec - mean(vec);
+                vec = vec / std(vec);
+            elseif max(vec) > 1
+                % Data is presumed to be exponential -- set mean to 1.
+                vec = vec / mean(vec);
+            end
+            data.input(:, j) = vec;
+        end
+        data = splitForTestSet(data, 10000);
+    case 'jan8_processed_lowlevel21'
+        % Only use the first 21 'lowlevel' features.
+        data = loaddata('jan8_processed');
+        data.input = data.input(:,1:21);
+        data.testinput = data.testinput(:,1:21);
+    case 'jan8_processed_highlevel7'
+        % Only use the last 7 'highlevel' features.
+        data = loaddata('jan8_processed');
+        data.input = data.input(:,22:28);
+        data.testinput = data.testinput(:,22:28);
     case 'testauto'
         data = load_simulated(10, 100, 100, 0.5, 0);
         %data = randomOrder(data);
@@ -69,10 +102,44 @@ switch dataname
         data.input  = batchmatrix2full(batchdata(:,:,1:nbatches));
         data.target = batchmatrix2full(batchtargets(:,:,1:nbatches));    
         data = randomOrder(data);         % Randomize order
-        % Make single matrix for test data.
+        % Make single matrix for test data. Batch again later if need be.
         ntestbatches = 100; % 600 train, 100 test.
         data.testinput  = batchmatrix2full(testbatchdata(:,:,1:ntestbatches));
         data.testtarget = batchmatrix2full(testbatchtargets(:,:,1:ntestbatches));
+    case 'mnistclassify_new'
+        % Just a temp hack.
+        data = loaddata('mnistclassify');
+    case 'mnist_semi_10000'
+        % MNIST, with only 10k labeled training examples.
+        data = loaddata('mnistclassify');
+        N = 10000;
+        data.unlabeled = data.input(N+1:end,:);
+        data.input = data.input(1:N,:);
+        data.target = data.target(1:N,:);
+    case 'mnist_semi_1000'
+        % MNIST, with only 10k labeled training examples.
+        data = loaddata('mnistclassify');
+        N = 1000;
+        data.unlabeled = data.input(N+1:end,:);
+        data.input = data.input(1:N,:);
+        data.target = data.target(1:N,:);
+    case 'mnist_semi_100'
+        % MNIST, with only 10k labeled training examples.
+        data = loaddata('mnistclassify');
+        N = 100;
+        data.unlabeled = data.input(N+1:end,:);
+        data.input = data.input(1:N,:);
+        data.target = data.target(1:N,:);
+    case 'mnist_semi_test'
+        % MNIST, with only 1000 labels, some unlabeled.
+        data = loaddata('mnistclassify');
+        N = 1000;
+        data.unlabeled = data.input(N+1:N+1000,:);
+        data.input = data.input(1:N,:);
+        data.target = data.target(1:N,:);
+        data.testinput = data.testinput(1:N,:);
+        data.testtarget = data.testtarget(1:N,:);
+        
     case 'mnistauto'
         data = loaddata('mnistclassify');
         data.target = data.input;
@@ -160,7 +227,7 @@ switch dataname
     % notMNIST
     case 'notmnistsmall'
         % Real valued features between [0,1]
-        load('/home/pjsadows/ml/data/notMNIST_small/notMNIST_small.mat');
+        load('/home/pjsadows/ml/data/notMNIST/notMNIST_small.mat');
         images = permute(images, [2,1,3]);
         data.target = dummyvar(labels+1);
         data.input = reshape(images, [28^2,1, 18724]);
@@ -168,6 +235,16 @@ switch dataname
         data.input = data.input/255; % Make [0,1];
         data = randomOrder(data);
         data = makeTestSet(data, 1000);
+    case 'notmnistlarge'
+        % Real valued features between [0,1]
+        load('/home/pjsadows/ml/data/notMNIST/notMNIST_large.mat');
+        images = permute(images, [2,1,3]);
+        data.target = dummyvar(labels+1);
+        data.input = reshape(images, 28^2,1, []);
+        data.input = squeeze(data.input)';
+        data.input = data.input/255; % Make [0,1];
+        data = randomOrder(data);
+        data = makeTestSet(data, 10000);
     case 'notmnist_small'
         % Kept for legacy with thresholdgate nets. Use notmnistsmall
         load('/home/pjsadows/ml/data/notMNIST_small/notMNIST_small.mat');
@@ -257,4 +334,20 @@ data.input = tempinput(1:end-N,:);
 data.target = temptarget(1:end-N,:);
 data.testinput = tempinput(end-N+1:end,:);
 data.testtarget = temptarget(end-N+1:end,:);
+end
+
+
+function data = splitForTestSet(data, ntest)
+% Split off some .input samples and save them as .testinput.
+data = randomOrder(data);
+assert(~isfield(data, 'testinput'))
+ntotal = size(data.input, 1);
+assert(ntest < ntotal)
+input = data.input;
+target = data.target;
+clear data
+data.input     = input(1:ntotal-ntest, :);
+data.target    = target(1:ntotal-ntest, :);
+data.testinput = input(ntotal-ntest+1:end, :);
+data.testtarget= target(ntotal-ntest+1:end, :);
 end

@@ -1,13 +1,14 @@
 clear all
 %maxNumCompThreads(16);
 
-dataname = 'test';
+% dataname = 'test';
+dataname = 'mnistclassify1000';
 % dataname = 'mnistautobinary1000';
 
 % dataname = 'mnistclassify';
 data = loaddata(dataname);
 
-n = netbp([100], data);
+n = netbp([300 200 100], data);
 % n = netdt([1000 1000], data);
 % 
 
@@ -18,7 +19,7 @@ n = n.initialize();
 % n.W = prev.n.W;
 
 n.batchsize = 1000;
-n.nupdate = 1; % maxnum
+n.nupdate = 3; % maxnum
 n.nepoch = 100;
 
 dataname

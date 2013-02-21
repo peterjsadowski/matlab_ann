@@ -2,6 +2,7 @@ function batchdata = makeBatchData(data, batchsize)
 % Make a cell array where each element is data struct with .input, .target fields.
 
 if ~isstruct(data)
+    % Convert matrix to struct.
     temp = data;
     clear data;
     data.input = temp;
@@ -13,10 +14,18 @@ data = randomOrder(data);
 % Number of batches is at least one. If more than one batch, we make sure
 % each batch has at minimum batchsize examples. Last one may get extra.
 nbatch = max(1, floor(size(data.input, 1)/batchsize));
-
 batchdata = cell(nbatch,1);
 for j = 1:nbatch
     batchdata{j} = getBatchData(data, batchsize, j);
+end
+
+% Distribute any unlabeled data to batches.
+if isfield(data, 'unlabeled')
+    N = size(data.unlabeled, 1);
+    for j = 1:nbatch
+        indices = ceil((j-1) * N/nbatch + 1):ceil(j*N/nbatch);
+        batchdata{j}.unlabeled = data.unlabeled(indices,:);
+    end
 end
 end
 

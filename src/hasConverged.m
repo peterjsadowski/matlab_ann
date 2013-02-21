@@ -14,7 +14,7 @@ minsteps = p.Results.minsteps;
 window = p.Results.window;
 threshold = p.Results.threshold;
 
-if (length(errors) >= minsteps-1) && (length(errors) > window)
+if (length(errors) > minsteps) && (length(errors) > window)
     delta = errors(end) - errors(end-window);
     if delta >= - threshold
         converged = true;
