@@ -1,5 +1,8 @@
 function data = loaddata(dataname, seed)
 % Convenience function for loading datasets by name.
+% Output: struct with fields .input, .target, .testinput, .testtarget
+
+% Initialize random seed.
 if nargin == 1
     seed = 1;
 end
@@ -7,9 +10,15 @@ s = RandStream('mt19937ar', 'Seed', seed);
 RandStream.setGlobalStream(s);
 
 switch dataname
+    case 'mnist1000'
+        load('data/mnist/mnist1000.mat')
+    case 'iris2class'
+        load('../data/iris/iris2class.mat')
+        data = randomOrder(data); %#ok<NODEF>
+        data = splitForTestSet(data, 20);
     case 'jan8_processed'
-        background = importdata('../atlas/data/jan8_2013/bg.txt');
-        signal = importdata('../atlas/data/jan8_2013/signal.txt');
+        background = importdata('../atlas/data/2013-01-08/bg.txt');
+        signal = importdata('../atlas/data/2013-01-08/signal.txt');
         data.input  = [background; signal];
         data.target = [zeros(size(background, 1), 1); ones(size(signal, 1), 1)];
         data = randomOrder(data);
