@@ -1,6 +1,9 @@
 function E = CrossEntropyError(X, target)
 % Cross entropy error for independent outputs.
 
+% NOTE: There are shortcuts for computing this using the input to sigmoid
+% neurons. See backprop notes.
+
 % Might have to handle log(0).
 E = - sum( target .* log(X) + (1-target) .* log(1-X) , 2); 
 

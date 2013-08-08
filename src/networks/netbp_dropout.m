@@ -1,15 +1,17 @@
 classdef netbp_dropout < netbp
 % Net trained with backpropagation and dropout.
     properties
-        nu = 0.1;
+        nu = 0.1; % Learning rate.
+        mu = 0.0; % Momentum
+        dW = {};  % Last parameter step. (For momentum).
     end
     properties (Dependent = true)
-        mu        % L2 penalty on weights, weight decay
+        l2penalty        % L2 penalty on weights, weight decay
         dropprob  % Probability of dropping node in each layer.
         % Analysis
     end
     properties (Access = 'private')
-        mu_vec      % mu
+        l2penalty_vec      % l2penalty
         dropprob_vec
     end
     methods
@@ -27,6 +29,10 @@ classdef netbp_dropout < netbp
                 self = recordErrors(self, data);
                 printstatus(self);
             end
+            % Initialize momentum.
+            for k = 1:self.nlayers
+                self.dW{k} = zeros(size(self.W{k}));
+            end
             % Begin learning
             for i = 1:self.nepoch
                 for j = 1:nbatch
@@ -35,7 +41,10 @@ classdef netbp_dropout < netbp
                     % Update weights.
                     for k = 1:self.nlayers
                         % Scale so that dE is average per sample.
-                        self.W{k} = self.W{k}  - self.nu * dE_dW{k} / size(data.input, 1);
+                        % dW = mu*dW + (1-mu) * nu * (-grad)
+                        self.dW{k} = (self.dW{k} * self.mu) ...
+                                     - (dE_dW{k} * (self.nu * (1 - self.mu) / size(data.input, 1))); 
+                        self.W{k} = self.W{k}  + self.dW{k};
                     end
                 end % batch
                 % Record errors

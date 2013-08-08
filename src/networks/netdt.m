@@ -4,9 +4,15 @@ classdef netdt < mlp
     % PROPERTIES
     % ==================================================
     properties
+        savefreq = 0;         % Save network every few epochs.
+        savedir  = 'results'; % Directory tosave results to. 
+        
         nepoch    = 10;       % Number of epochs.
         batchsize = 1000;     % Number of examples in each batch.
-        nupdate  = 10;        % Max number of linesearches/updates per batch.
+        
+        % 1 is good. Otherwise, weights will change then move back. 
+        nupdate  = 1;        % Max number of linesearches/updates per batch.
+        
         
         nsamp = 1000;  % Max number of binary vectors to try as targets.
         nvarnodes = inf; % Number of variable nodes when updating targets. (for opttargetfcn=optimizeTargets)
@@ -112,6 +118,10 @@ classdef netdt < mlp
                 % Record errors
                 self = recordErrors(self, data);
                 printstatus(self)
+                % Save at intervals, and at final epoch.
+                if (mod(i,self.savefreq) == 0) || (i==self.nepoch)
+                    self.savenet(self.savedir)
+                end
                 %self.zeroNodes(:, end+1) = countZeroNodes(self, data);
                 %fprintf('%d ', self.zeroNodes(:,end));
                 %fprintf('\n');
@@ -350,11 +360,10 @@ classdef netdt < mlp
         function string = param2str(self)
             % Creates short string describing parameters of netdt.
             % We include ErrorFcns{1}.
-            string = sprintf('%s_%s_bs%d_nup%d_nsamp%d_nvar%d_%s_%s_error%f', ...
+            string = sprintf('%s_%s_bs%d_nup%d_nu%f_nsamp%d_nvar%d_%s_%s', ...
                         class(self), arch2str(self), ...
-                        self.batchsize, self.nupdate, self.nsamp, self.nvarnodes, ...
-                        self.ErrorFcns{1}, self.ErrorFcn,...
-                        self.ErrorTrain(end));
+                        self.batchsize, self.nupdate, self.nu, self.nsamp, self.nvarnodes, ...
+                        self.ErrorFcns{1}, self.ErrorFcn);
         end
         % Analaysis tools (non-critical)
         function printstatus(self)

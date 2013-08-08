@@ -99,22 +99,26 @@ switch dataname
         data = rand(1000, 10) < 0.5;
         data = setupAuto(data);
     % MNIST
-    case 'mnistclassify'
-        % Load MNIST data.
-        warning('off','MATLAB:dispatcher:pathWarning')
-        path(path, '../data/mnist');
-        path(path, '../../data/mnist'); % One of these should exist...
-        warning('on','MATLAB:dispatcher:pathWarning')
-        [batchdata, testbatchdata, batchtargets, testbatchtargets] = makebatches();    % Loads batchdata and testbatchdata.
-        % Make training data.
-        nbatches = 600; % 600 is everything.
-        data.input  = batchmatrix2full(batchdata(:,:,1:nbatches));
-        data.target = batchmatrix2full(batchtargets(:,:,1:nbatches));    
-        data = randomOrder(data);         % Randomize order
-        % Make single matrix for test data. Batch again later if need be.
-        ntestbatches = 100; % 600 train, 100 test.
-        data.testinput  = batchmatrix2full(testbatchdata(:,:,1:ntestbatches));
-        data.testtarget = batchmatrix2full(testbatchtargets(:,:,1:ntestbatches));
+    case 'mnist'
+        % MNIST as struct
+        data = load('mnist.mat');
+%         % Load MNIST data.
+%         warning('off','MATLAB:dispatcher:pathWarning')
+%         path(path, '../data/mnist');
+%         path(path, '../../data/mnist'); % One of these should exist...
+%         warning('on','MATLAB:dispatcher:pathWarning')
+%         [batchdata, testbatchdata, batchtargets, testbatchtargets] = makebatches();    % Loads batchdata and testbatchdata.
+%         % Make training data.
+%         nbatches = 600; % 600 is everything.
+%         data.input  = batchmatrix2full(batchdata(:,:,1:nbatches));
+%         data.target = batchmatrix2full(batchtargets(:,:,1:nbatches));    
+%         %data = randomOrder(data);         % Randomize order
+%         % Make single matrix for test data. Batch again later if need be.
+%         ntestbatches = 100; % 600 train, 100 test.
+%         data.testinput  = batchmatrix2full(testbatchdata(:,:,1:ntestbatches));
+%         data.testtarget = batchmatrix2full(testbatchtargets(:,:,1:ntestbatches));
+    case 'mnistclassify' % deprecated
+        data = loaddata('mnist'); 
     case 'mnistclassify_new'
         % Just a temp hack.
         data = loaddata('mnistclassify');
@@ -236,7 +240,7 @@ switch dataname
     % notMNIST
     case 'notmnistsmall'
         % Real valued features between [0,1]
-        load('/home/pjsadows/ml/data/notMNIST/notMNIST_small.mat');
+        load('/home/pjsadows/ml/matlab/data/notMNIST/notMNIST_small.mat');
         images = permute(images, [2,1,3]);
         data.target = dummyvar(labels+1);
         data.input = reshape(images, [28^2,1, 18724]);
@@ -246,7 +250,7 @@ switch dataname
         data = makeTestSet(data, 1000);
     case 'notmnistlarge'
         % Real valued features between [0,1]
-        load('/home/pjsadows/ml/data/notMNIST/notMNIST_large.mat');
+        load('/home/pjsadows/ml/data/matlab/notMNIST/notMNIST_large.mat');
         images = permute(images, [2,1,3]);
         data.target = dummyvar(labels+1);
         data.input = reshape(images, 28^2,1, []);
@@ -256,7 +260,7 @@ switch dataname
         data = makeTestSet(data, 10000);
     case 'notmnist_small'
         % Kept for legacy with thresholdgate nets. Use notmnistsmall
-        load('/home/pjsadows/ml/data/notMNIST_small/notMNIST_small.mat');
+        load('/home/pjsadows/ml/data/matlab/notMNIST_small/notMNIST_small.mat');
         data = reshape(images, [28^2,1, 18724]);
         data = squeeze(data)' > 100;
         data = randomOrder(data);

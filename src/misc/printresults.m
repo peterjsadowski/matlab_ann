@@ -1,5 +1,4 @@
 function printresults(dataname, varargin)
-path('/home/pjsadows/ml/prototyping/src/', path); 
 
 if nargin > 1
     pattern = varargin{1};

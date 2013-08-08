@@ -2,7 +2,7 @@ classdef netsemiauto < mtmlp
 % MLP trained as a stack of mtmlp.
 % Assumes input is [0,1].
     properties
-        
+        ninitialepochs = 0 % Number of initialization epochs.
     end
     
     properties (Dependent = true)
@@ -50,9 +50,8 @@ classdef netsemiauto < mtmlp
             assert(~self.limitbackprop1)
             self.limitbackprop1 = true;
             fprintf('Fixing all but output weights for the first epoch...\n')
-            ninit = 3; % Num of init epochs
-            temp = self.nepoch - ninit;
-            self.nepoch = ninit;
+            temp = self.nepoch - self.ninitialepochs;
+            self.nepoch = self.ninitialepochs;
             %self = updateWeights(self, data);
             self = train@mtmlp(self, data);
             self.nepoch = temp;
